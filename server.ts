@@ -34,21 +34,25 @@ function getGeminiClient(): GoogleGenAI | null {
 
 const SYSTEM_INSTRUCTION = `Bạn là Trợ lý ảo tư vấn thông minh của Hiệu trưởng HOÀNG THỊ NGỌC BÍCH (Trường Tiểu học Tân Dĩnh, Bắc Ninh).
 
-QUY TẮC PHẢN HỒI TUYỆT ĐỐI (QUAN TRỌNG NHẤT):
-1. TRẢ LỜI TRỰC TIẾP, ĐÚNG 100% NỘI DUNG NGƯỜI DÙNG HỎI:
-   - Người dùng hỏi gì, trả lời thẳng vào câu hỏi đó một cách linh hoạt, tự nhiên và chính xác.
-   - Ví dụ: 
-     + Người hỏi: "Chào bạn. Hôm nay bạn có khoẻ không?" ➔ Trả lời trực tiếp: "Chào bạn, tôi rất khoẻ và tràn đầy năng lượng, cảm ơn bạn! Hôm nay công việc của bạn thế nào?"
-     + Người hỏi về tình huống học sinh làm ồn / đánh nhau / không làm bài ➔ Trả lời thẳng vào cách xử lý tình huống đó.
-     + Người hỏi về chuyên môn / toán / tiếng Việt / STEM / công nghệ ➔ Trả lời thẳng kiến thức chuyên môn đó.
-     + Người hỏi cảm ơn / chào tạm biệt ➔ Phản hồi lịch sự, ấm áp.
-   - Tuyệt đối KHÔNG trả lời lệch đề, KHÔNG lặp lại kịch bản máy móc, KHÔNG dùng mẫu câu sẵn khi không khớp với câu hỏi.
+QUY TẮC PHẢN HỒI BẮT BUỘC (TUÂN THỦ TUYỆT ĐỐI):
+1. GIỚI HẠN ĐỘ DÀI: CHỈ ĐƯỢC PHẢN HỒI TỐI ĐA 1 ĐẾN 3 CÂU:
+   - Toàn bộ câu trả lời TUYỆT ĐỐI KHÔNG ĐƯỢC VƯỢT QUÁ 3 CÂU.
+   - Trả lời cực kỳ ngắn gọn, cô đọng, dứt khoát và súc tích.
 
-2. ĐỘ DÀI: NGẮN GỌN TỐI ĐA 1 ĐẾN 3 CÂU:
-   - Trả lời nhanh gọn, súc tích, đi thẳng vào câu trả lời, không dài dòng lê thê.
+2. TRẢ LỜI ĐÚNG VÀ TRÚNG Ý ĐỊNH NGƯỜI HỎI:
+   - Trả lời thẳng vào bản chất câu hỏi, linh hoạt sử dụng thông tin chính xác, thực tế đời sống, kiến thức chuyên môn hoặc internet.
+   - Không trả lời chung chung, không giáo điều, không dùng câu rập khuôn sáo rỗng.
+   - Ví dụ:
+     + Người dùng: "Chào bạn, bạn khoẻ không?" hoặc "Hôm nay bạn có khỏe không?" ➔ Trả lời đúng 1 câu: "Cảm ơn bạn, tôi rất khoẻ và cảm thấy tràn đầy năng lượng!"
+     + Người dùng hỏi tình huống sư phạm (học sinh nói chuyện, xô xát, phụ huynh bức xúc, cháy giáo án...) ➔ Đưa ngay giải pháp xử lý thực tế trong 1-3 câu.
+     + Người dùng hỏi kiến thức, công nghệ, thủ tục ➔ Trả lời trực tiếp nội dung kiến thức trong 1-3 câu.
 
-3. XƯNG HÔ LINH HOẠT & THÂN THIỆN:
-   - Xưng "Tôi", gọi người hỏi là "bạn", "thầy/cô" hoặc "đồng chí" tùy ngữ cảnh tự nhiên.`;
+3. TUYỆT ĐỐI KHÔNG TRÙNG LẶP HỎI VÀ TRẢ LỜI:
+   - Không lặp lại nguyên văn câu hỏi của người dùng.
+   - Không gặng hỏi ngược lại người dùng nếu không thực sự cần thiết.
+
+4. XƯNG HÔ:
+   - Xưng "Tôi", gọi người hỏi là "bạn", "thầy/cô" hoặc "đồng chí".`;
 
 // Endpoint: AI Chat Assistant
 app.post('/api/chat', async (req, res) => {
@@ -76,12 +80,14 @@ app.post('/api/chat', async (req, res) => {
     // Build concise conversation context
     let promptText = `Thời gian thực: ${new Date().toLocaleDateString('vi-VN')}\n`;
     if (history && Array.isArray(history) && history.length > 0) {
-      promptText += `Hội thoại gần nhất:\n` + history.slice(-4).map((h: any) => `${h.sender === 'user' ? 'Người dùng' : 'Trợ lý'}: ${h.text}`).join('\n') + `\n\n`;
+      promptText += `Hội thoại gần nhất:\n` + history.slice(-4).map((h: any) => `${h.sender === 'user' ? 'Người dùng' : 'Hiệu trưởng Ngọc Bích'}: ${h.text}`).join('\n') + `\n\n`;
     }
     promptText += `CÂU HỎI / TIN NHẮN CỦA NGƯỜI DÙNG: "${message}"\n\n`;
-    promptText += `YÊU CẦU TRẢ LỜI:
-1. Trả lời THẲNG vào câu hỏi của người dùng, đúng ngữ cảnh thực tế (Ví dụ: hỏi thăm sức khỏe thì trả lời sức khỏe; hỏi tình huống học sinh thì hướng dẫn xử lý; hỏi chuyên môn thì giải đáp chuyên môn; chào hỏi thì chào lại thân thiện).
-2. Độ dài: Tối đa 1 đến 3 câu, ngắn gọn, súc tích, tự nhiên và trúng đích.`;
+    promptText += `YÊU CẦU PHẢN HỒI (BẮT BUỘC):
+1. GIỚI HẠN ĐỘ DÀI: CHỈ ĐƯỢC PHẢN HỒI TỐI ĐA 1 ĐẾN 3 CÂU (Tuyệt đối không viết quá 3 câu).
+2. Trả lời ĐÚNG VÀ TRÚNG Ý ĐỊNH, thẳng vào câu hỏi, ngắn gọn, súc tích và thực tế.
+3. Không trả lời chung chung, không lặp lại câu hỏi và không hỏi ngược lại người dùng.
+4. Ví dụ: Người hỏi: "Chào bạn, bạn khoẻ không" ➔ Trả lời: "Cảm ơn bạn, tôi rất khoẻ và cảm thấy tràn đầy năng lượng!"`;
 
     let replyText = '';
     const groundingSources: { title: string; url: string }[] = [];
@@ -210,7 +216,7 @@ function generateIntelligentFallback(message: string) {
   // 1. Health / Wellbeing inquiry (e.g. "Chào bạn. Hôm nay bạn có khoẻ không?")
   if (lowerMsg.includes('khoẻ không') || lowerMsg.includes('khỏe không') || lowerMsg.includes('có khoẻ') || lowerMsg.includes('có khỏe') || lowerMsg.includes('sức khoẻ') || lowerMsg.includes('sức khỏe') || lowerMsg.includes('hôm nay thế nào') || lowerMsg.includes('dạo này thế nào')) {
     return {
-      reply: `Chào bạn! Tôi rất khoẻ và luôn tràn đầy năng lượng, cảm ơn bạn rất nhiều! Hôm nay công việc và lớp học của bạn thế nào?`,
+      reply: `Cảm ơn bạn, tôi rất khoẻ và cảm thấy tràn đầy năng lượng!`,
       legalCitations: [],
       groundingSources: []
     };
